@@ -21,5 +21,5 @@ function param2Obj(url) {
 }
 
 module.exports = {
-  param2Obj
+  param2Obj,
 }

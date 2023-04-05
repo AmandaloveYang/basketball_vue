@@ -52,15 +52,15 @@ export default {
       const statusMap = {
         published: 'success',
         draft: 'gray',
-        deleted: 'danger'
+        deleted: 'danger',
       }
       return statusMap[status]
-    }
+    },
   },
   data() {
     return {
       list: null,
-      listLoading: true
+      listLoading: true,
     }
   },
   created() {
@@ -73,7 +73,7 @@ export default {
         this.list = response.data.items
         this.listLoading = false
       })
-    }
-  }
+    },
+  },
 }
 </script>

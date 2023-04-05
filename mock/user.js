@@ -1,26 +1,30 @@
 
 const tokens = {
   admin: {
-    token: 'admin-token'
+    token: 'admin-token',
   },
   editor: {
-    token: 'editor-token'
-  }
+    token: 'editor-token',
+  },
 }
 
 const users = {
   'admin-token': {
+    username: 'admin',
+    password: 'admin',
     roles: ['admin'],
     introduction: 'I am a super administrator',
     avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-    name: 'Super Admin'
+    name: 'Super Admin',
   },
   'editor-token': {
+    username: 'editor',
+    password: 'editor',
     roles: ['editor'],
     introduction: 'I am an editor',
     avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
-    name: 'Normal Editor'
-  }
+    name: 'Normal Editor',
+  },
 }
 
 module.exports = [
@@ -36,15 +40,15 @@ module.exports = [
       if (!token) {
         return {
           code: 60204,
-          message: 'Account and password are incorrect.'
+          message: 'Account and password are incorrect.',
         }
       }
 
       return {
-        code: 20000,
-        data: token
+        code: 200,
+        data: token,
       }
-    }
+    },
   },
 
   // get user info
@@ -59,15 +63,32 @@ module.exports = [
       if (!info) {
         return {
           code: 50008,
-          message: 'Login failed, unable to get user details.'
+          message: 'Login failed, unable to get user details.',
         }
       }
-
-      return {
-        code: 20000,
-        data: info
+      // check user role and set permissions
+      let roles = []
+      if (info.roles && info.roles.length > 0) {
+        roles = info.roles
       }
-    }
+      const permissions = []
+      if (roles.includes('admin')) {
+        permissions.push('dashboard', 'user', 'permission')
+      }
+      if (roles.includes('editor')) {
+        permissions.push('dashboard', 'user')
+      }
+      return {
+        code: 200,
+        data: {
+          roles: roles,
+          permissions: permissions,
+          introduction: info.introduction,
+          avatar: info.avatar,
+          name: info.name,
+        },
+      }
+    },
   },
 
   // user logout
@@ -76,9 +97,9 @@ module.exports = [
     type: 'post',
     response: _ => {
       return {
-        code: 20000,
-        data: 'success'
+        code: 200,
+        data: 'success',
       }
-    }
-  }
+    },
+  },
 ]
