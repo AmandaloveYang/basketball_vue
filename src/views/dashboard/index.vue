@@ -101,7 +101,6 @@ export default {
   },
   async created() {
     this.Option = {} // 初始化echarts的Option
-    console.log(this.Option, 'this.Option')
     try {
       const res = JSON.parse(JSON.stringify(await hupuScheduleList()))
       this.gameList = res.result.gameList
