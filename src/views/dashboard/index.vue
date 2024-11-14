@@ -66,7 +66,7 @@
       <el-select v-model="form.time" placeholder="请选择时间" default-first-option>
         <el-option v-for="(item, index) in time" :key="index" :label="item" :value="item" />
       </el-select>
-      <div id="main" />
+      <div id="main" /> <!-- 这是用来展示echarts图表的容器 -->
     </el-main>
   </div>
 </template>
@@ -161,19 +161,16 @@ export default {
   },
   mounted() {
   },
-  methods:{
-
-
-
+  methods: {
     // 初始化和更新图表
     initChart(option) {
       const myChart = echarts.init(document.getElementById('main'))
       myChart.setOption(option)
-      window.addEventListener('resize', function() {
+      window.addEventListener('resize', () => {
         myChart.resize()
       })
-    }
-  }
+    },
+  },
 }
 </script>
 

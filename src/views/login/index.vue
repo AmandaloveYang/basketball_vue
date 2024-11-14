@@ -42,7 +42,14 @@ export default {
   data() {
     const validateUsername = (rule, value, callback) => {
       if (!validUsername(value)) {
-        callback(new Error('Please enter the correct user name'))
+        callback(new Error('请输入正确的用户名'))
+      } else {
+        callback()
+      }
+    }
+    const validatePassword = (rule, value, callback) => {
+      if (value.length < 6) {
+        callback(new Error('密码不能少于6个字符'))
       } else {
         callback()
       }
@@ -55,6 +62,10 @@ export default {
       loginRules: {
         username: [
           { required: true, trigger: 'blur', validator: validateUsername },
+        ],
+        password: [
+          { required: true, trigger: 'blur', message: '请输入密码' },
+          { validator: validatePassword, trigger: 'blur' },
         ],
       },
       loading: false,
