@@ -1,66 +1,63 @@
 <template>
   <div class="dashboard-container">
-    <div style="margin-left: 200px;">
-      <!-- 第一行 -->
-      <el-row :gutter="30" class="row-margin">
-        <el-col v-for="(item,index) in gameList.slice(0,5)" :key="item.dayBlock" :offset="0" :span="4">
-          <el-card v-loading="loading" class="box-card" shadow="always">
-            <div slot="header" class="clearfix">
-              <div>{{ item.dayBlock }}</div>
-              <!--当天的赛程-->
-              <div>{{ item.matchList[0].competitionStageDesc }}({{ item.matchList[index] ? item.matchList[index].matchStatusChinese : '未开始' }})</div>
-            </div>
-            <div v-for="(game,j) in item.matchList" :key="j" class="text item" style="margin-top:10px ;">
-              <div class="schedule">
-                <div class="team">
-                  <div>
-                    {{ game.homeTeamName }}
-                    <span v-if="game.homeScore > game.awayScore" class="win-mark">✓</span>
-                  </div>
-                  <div style="margin-top: 10px;">
-                    {{ game.awayTeamName }}
-                    <span v-if="game.awayScore > game.homeScore" class="win-mark">✓</span>
-                  </div>
+    <div class="search-container">
+      <el-input
+        v-model="searchTeam"
+        placeholder="请输入球队名称"
+        class="search-input"
+        clearable
+        @input="handleSearch"
+      >
+        <el-button slot="append" icon="el-icon-search" @click="handleSearch" />
+      </el-input>
+    </div>
+
+    <div v-if="searchResults.length > 0" class="search-results">
+      <el-card class="search-result-card">
+        <div class="result-title">搜索结果：</div>
+        <div v-for="(result, index) in searchResults" :key="index" class="result-item">
+          <div class="result-date">{{ result.date }}</div>
+          <div class="result-match">
+            <span :class="{ 'winner': result.isHomeWinner }">{{ result.homeTeam }}</span>
+            <span class="score">{{ result.homeScore }} - {{ result.awayScore }}</span>
+            <span :class="{ 'winner': result.isAwayWinner }">{{ result.awayTeam }}</span>
+          </div>
+        </div>
+      </el-card>
+    </div>
+
+    <div class="game-container">
+      <el-col
+        v-for="(item,index) in gameList"
+        :key="item.dayBlock"
+        class="game-item"
+      >
+        <el-card v-loading="loading" class="box-card" shadow="always">
+          <div slot="header" class="clearfix">
+            <div>{{ item.dayBlock }}</div>
+            <!--当天的赛程-->
+            <div>{{ item.matchList[0].competitionStageDesc }}({{ item.matchList[index] ? item.matchList[index].matchStatusChinese : '未开始' }})</div>
+          </div>
+          <div v-for="(game,j) in item.matchList" :key="j" class="text item" style="margin-top:10px ;">
+            <div class="schedule">
+              <div class="team">
+                <div>
+                  {{ game.homeTeamName }}
+                  <span v-if="game.homeScore > game.awayScore" class="win-mark">✓</span>
                 </div>
-                <div class="score">
-                  <div>{{ game.homeScore }}</div>
-                  <div style="margin-top: 10px;">{{ game.awayScore }}</div>
-                </div>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <!-- 第二行 -->
-      <el-row :gutter="30" class="row-margin">
-        <el-col v-for="(item,index) in gameList.slice(5,10)" :key="item.dayBlock" :offset="0" :span="4">
-          <el-card v-loading="loading" class="box-card" shadow="always">
-            <div slot="header" class="clearfix">
-              <div>{{ item.dayBlock }}</div>
-              <!--当天的赛程-->
-              <div>{{ item.matchList[0].competitionStageDesc }}({{ item.matchList[index] ? item.matchList[index].matchStatusChinese : '未开始' }})</div>
-            </div>
-            <div v-for="(game,j) in item.matchList" :key="j" class="text item" style="margin-top:10px ;">
-              <div class="schedule">
-                <div class="team">
-                  <div>
-                    {{ game.homeTeamName }}
-                    <span v-if="game.homeScore > game.awayScore" class="win-mark">✓</span>
-                  </div>
-                  <div style="margin-top: 10px;">
-                    {{ game.awayTeamName }}
-                    <span v-if="game.awayScore > game.homeScore" class="win-mark">✓</span>
-                  </div>
-                </div>
-                <div class="score">
-                  <div>{{ game.homeScore }}</div>
-                  <div style="margin-top: 10px;">{{ game.awayScore }}</div>
+                <div style="margin-top: 10px;">
+                  {{ game.awayTeamName }}
+                  <span v-if="game.awayScore > game.homeScore" class="win-mark">✓</span>
                 </div>
               </div>
+              <div class="score">
+                <div>{{ game.homeScore }}</div>
+                <div style="margin-top: 10px;">{{ game.awayScore }}</div>
+              </div>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
+          </div>
+        </el-card>
+      </el-col>
     </div>
     <el-main>
       <el-select v-model="form.time" placeholder="请选择时间" default-first-option>
@@ -87,6 +84,8 @@ export default {
       },
       time: '',
       Option: {}, // echarts的Option
+      searchTeam: '', // 搜索关键词
+      searchResults: [], // 搜索结果
     }
   },
   computed: {
@@ -169,6 +168,31 @@ export default {
       window.addEventListener('resize', () => {
         myChart.resize()
       })
+    },
+    handleSearch() {
+      if (!this.searchTeam) {
+        this.searchResults = []
+        return
+      }
+
+      const results = []
+      this.gameList.forEach(game => {
+        game.matchList.forEach(match => {
+          if (match.homeTeamName.includes(this.searchTeam) ||
+              match.awayTeamName.includes(this.searchTeam)) {
+            results.push({
+              date: game.dayBlock,
+              homeTeam: match.homeTeamName,
+              awayTeam: match.awayTeamName,
+              homeScore: match.homeScore,
+              awayScore: match.awayScore,
+              isHomeWinner: match.homeScore > match.awayScore,
+              isAwayWinner: match.awayScore > match.homeScore,
+            })
+          }
+        })
+      })
+      this.searchResults = results
     },
   },
 }
@@ -257,6 +281,90 @@ export default {
   flex: 1;
   div {
     padding: 4px 0;
+  }
+}
+
+// 添加新的flex布局样式
+.game-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin-left: 50px;
+}
+
+.game-item {
+  flex: 0 0 calc(20% - 24px); // 默认5个一排
+  min-width: 250px; // 设置最小宽度
+}
+
+// 响应式布局
+@media screen and (max-width: 1600px) {
+  .game-item {
+    flex: 0 0 calc(25% - 24px); // 4个一排
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .game-item {
+    flex: 0 0 calc(33.33% - 24px); // 3个一排
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .game-item {
+    flex: 0 0 calc(50% - 24px); // 2个一排
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .game-item {
+    flex: 0 0 100%; // 1个一排
+  }
+}
+
+.search-container {
+  margin: 0 50px 20px;
+  .search-input {
+    max-width: 400px;
+  }
+}
+
+.search-results {
+  margin: 0 50px 20px;
+  .search-result-card {
+    margin-bottom: 20px;
+  }
+  .result-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  .result-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #ebeef5;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  .result-date {
+    color: #909399;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  .result-match {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 500px;
+
+    .score {
+      color: #f56c6c;
+      font-weight: bold;
+      margin: 0 20px;
+    }
+    .winner {
+      color: #67c23a;
+    }
   }
 }
 </style>
